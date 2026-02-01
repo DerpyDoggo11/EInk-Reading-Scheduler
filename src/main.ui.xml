@@ -29,6 +29,20 @@
               </packing>
             </child>
 
+            <child>
+              <object class="GtkButton" id="open_project">
+                <property name="visible">True</property>
+                <property name="relief">none</property>
+                <property name="label">Open PDF</property>
+              </object>z
+              <packing>
+                <property name="expand">False</property>
+                <property name="fill">False</property>
+                <property name="padding">5</property>
+                <property name="position">0</property>
+              </packing>
+            </child>
+
           </object>
           <packing>
             <property name="expand">False</property>

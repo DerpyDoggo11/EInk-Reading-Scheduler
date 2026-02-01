@@ -37,7 +37,7 @@ int main(int argc, char *argv[])
 
   GtkWidget *window = GTK_WIDGET(gtk_builder_get_object(builder, "window"));
   GtkWidget *button_quit = GTK_WIDGET(gtk_builder_get_object(builder, "title_button_left"));
-
+  GtkWidget *button_open = GTK_WIDGET(gtk_builder_get_object(builder, "open_project"));
   // Exit the application when the main window is closed
   g_signal_connect(window, "destroy", G_CALLBACK(gtk_main_quit), NULL);
 
@@ -46,7 +46,7 @@ int main(int argc, char *argv[])
 
   // Set the background color to white: this looks a little better on the Kindle screen
   GdkColor color;
-  if (gdk_color_parse("#ffffff", &color))
+  if (gdk_color_parse("#000000ff", &color))
   {
     gtk_widget_modify_bg(window, GTK_STATE_NORMAL, &color);
   }

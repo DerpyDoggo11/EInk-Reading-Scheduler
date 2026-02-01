@@ -1,8 +1,8 @@
-## PDF Annotator for E-Ink Displays
+# Reading Scheduler for E-Ink Displays (kindles, kobos, etc..)
+A fun solution for maintaining daily reading:
+- Automatically sets up a customizable reading plan for any book
+- Tracks the user's progress throughout the book 
+- Rewards the user for reading a certain amount of time
 
-An all in one solution for studying large textbooks:
-- Organizes text, images, and equations into a customizable format
-- Shows related terms / equations for key terms
-- Keeps track of progress throughout the textbook
 
-# A Hack Club Inkling submission
+## A Hack Club Inkling-YSWS submission
