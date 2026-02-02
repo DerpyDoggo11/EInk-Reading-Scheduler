@@ -1,0 +1,40 @@
+CREATE TABLE content (
+    ContentID TEXT PRIMARY KEY,
+    Title TEXT,
+    Attrib TEXT,
+    ContentType INTEGER,
+    ___other fields___
+);
+
+CREATE TABLE content_settings (
+    ContentID TEXT,
+    Progress REAL,
+    ReadStatus INTEGER
+);
+
+INSERT INTO content VALUES
+('file:///mnt/onboard/books/Book1.pdf', 'Digital Signal Processing', 'Unknown', 6);
+
+INSERT INTO content_settings VALUES
+('file:///mnt/onboard/books/Book1.pdf', 0.5, 1);
+
+
+INSERT INTO content VALUES
+('file:///mnt/onboard/books/Book2.pdf', 'Rocket Propulsion Elements', 'Unknown', 6);
+
+INSERT INTO content_settings VALUES
+('file:///mnt/onboard/books/Book2.pdf', 0.1, 1);
+
+
+INSERT INTO content VALUES
+('file:///mnt/onboard/books/Book3.pdf', 'Linear Algebra Introduction', 'Unknown', 6);
+
+INSERT INTO content_settings VALUES
+('file:///mnt/onboard/books/Book3.pdf', 0, 1);
+
+
+INSERT INTO content VALUES
+('file:///mnt/onboard/books/Book4.pdf', 'Linear Algebra Introduction', 'Unknown', 6);
+
+INSERT INTO content_settings VALUES
+('file:///mnt/onboard/books/Book4.pdf', 0.9, 1);

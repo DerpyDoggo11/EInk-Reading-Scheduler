@@ -25,6 +25,7 @@
           pkgs.pkg-config
           pkgs.glib
           pkgs.gtk2
+          pkgs.sqlite
           cross.buildPackages.gcc
           pkgs.vim
           pkgs.tinyxxd
