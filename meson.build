@@ -11,6 +11,9 @@ sqlite_dep = dependency('sqlite3')
 
 sources = files(
   './src/main.cpp',
+  './src/icons/book_icon.h',
+  './src/icons/quit_icon.h',
+  './src/icons/streak_icon.h',
 )
 
 include_dirs = include_directories('./include/')
@@ -23,6 +26,6 @@ executable(
     gtk_dep,
     sqlite_dep,
   ],
-  cpp_args: '-static-libstdc++',
+  cpp_args: ['-O2', '-static-libstdc++'],
   link_args: ['-static-libstdc++']
 )

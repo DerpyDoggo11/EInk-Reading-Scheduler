@@ -1,5 +1,9 @@
 #include <gtk-2.0/gtk/gtk.h>
 #include <sqlite3.h>
+#include "icons/book_icon.h"
+#include "icons/quit_icon.h"
+#include "icons/streak_icon.h"
+#include "icons/add_icon.h"
 #include <iostream>
 #include <thread>
 #include <list> 
@@ -7,6 +11,11 @@
 
 GtkWidget *create_book_card(const char *title, float currentProgress, float totalProgress, float streak)
 {
+  GtkWidget *event = gtk_event_box_new(); // used to set background color (unused)
+  //GdkColor bg; gdk_color_parse("#868686", &bg); 
+  //gtk_widget_modify_bg(event, GTK_STATE_NORMAL, &bg);
+  //gtk_container_set_border_width(GTK_CONTAINER(event), 10);
+
   GtkWidget *frame = gtk_frame_new(NULL);
   gtk_frame_set_shadow_type(GTK_FRAME(frame), GTK_SHADOW_ETCHED_IN);
 
@@ -14,6 +23,8 @@ GtkWidget *create_book_card(const char *title, float currentProgress, float tota
   gtk_container_add(GTK_CONTAINER(frame), box);
 
   gtk_box_pack_start(GTK_BOX(box), gtk_label_new(title), FALSE, FALSE, 0);
+
+  gtk_box_pack_start(GTK_BOX(box), gtk_label_new("----------------------------------"), FALSE, FALSE, 0);
 
   // Current Progress
   std::string currentProgressText = std::to_string(currentProgress) + (currentProgress == 1 ? " page left today" : " pages left today");
@@ -23,11 +34,23 @@ GtkWidget *create_book_card(const char *title, float currentProgress, float tota
   std::string totalProgressText = std::to_string(totalProgress) + (totalProgress == 1 ? " page until completion" : " pages until completion");
   gtk_box_pack_start(GTK_BOX(box), gtk_label_new(totalProgressText.c_str()), FALSE, FALSE, 0);
 
+  GtkWidget *streakBox = gtk_hbox_new(FALSE, 5); // Load embedded fire icon 
+  GdkPixbuf *streakPixbuf = gdk_pixbuf_new_from_inline(streak_png_len, streak_png, FALSE, NULL); 
+
+  if (streakPixbuf) { 
+    GtkWidget *streakIcon = gtk_image_new_from_pixbuf(streakPixbuf); 
+    gtk_box_pack_start(GTK_BOX(streakBox), streakIcon, FALSE, FALSE, 0); 
+    g_object_unref(streakPixbuf); 
+  }
+
   // Streak
   std::string streakText = std::to_string(streak) + (streak == 1 ? " day streak" : " days streak");
-  gtk_box_pack_start(GTK_BOX(box), gtk_label_new(streakText.c_str()), FALSE, FALSE, 0);
+  gtk_box_pack_start(GTK_BOX(streakBox), gtk_label_new(streakText.c_str()), FALSE, FALSE, 0); 
+  gtk_box_pack_start(GTK_BOX(box), streakBox, FALSE, FALSE, 0);
 
-  return frame;
+  gtk_container_add(GTK_CONTAINER(event), frame);
+
+  return event;
 }
 
 struct bookData{
@@ -111,8 +134,31 @@ int main(int argc, char *argv[])
   GtkWidget *vbox = gtk_vbox_new(FALSE, 0);
   gtk_container_add(GTK_CONTAINER(window), vbox);
 
-  GtkWidget *addBookMi = gtk_menu_item_new_with_label("Add Book from Library");
-  GtkWidget *quitMi = gtk_menu_item_new_with_label("Quit");
+  // Quit Button
+  GtkWidget *quitMi = gtk_menu_item_new();
+
+  GdkPixbuf *quitPixbuf = gdk_pixbuf_new_from_inline(quit_png_len, quit_png, FALSE, NULL);
+  GtkWidget *quitIcon = gtk_image_new_from_pixbuf(quitPixbuf);
+  g_object_unref(quitPixbuf);
+  gtk_container_add(GTK_CONTAINER(quitMi), quitIcon);
+
+  // Add Book Button
+  GtkWidget *addBookMi = gtk_menu_item_new();
+
+  GtkWidget *hbox = gtk_hbox_new(FALSE, 6);
+
+  GdkPixbuf *addPixbuf = gdk_pixbuf_new_from_inline(add_png_len, add_png, FALSE, NULL);
+  GtkWidget *addIcon = gtk_image_new_from_pixbuf(addPixbuf);
+  g_object_unref(addPixbuf);
+  gtk_box_pack_start(GTK_BOX(hbox), addIcon, FALSE, FALSE, 0);
+
+  GdkPixbuf *bookPixbuf = gdk_pixbuf_new_from_inline(book_png_len, book_png, FALSE, NULL);
+  GtkWidget *bookIcon = gtk_image_new_from_pixbuf(bookPixbuf);
+  g_object_unref(bookPixbuf);
+  gtk_box_pack_start(GTK_BOX(hbox), bookIcon, FALSE, FALSE, 0);
+
+  gtk_container_add(GTK_CONTAINER(addBookMi), hbox);
+
   // root / menubar
   GtkWidget *menubar = gtk_menu_bar_new();
   gtk_menu_shell_append(GTK_MENU_SHELL(menubar), quitMi);
@@ -145,17 +191,8 @@ int main(int argc, char *argv[])
 
     gtk_box_pack_start(GTK_BOX(listBox), card, FALSE, FALSE, 10);
   }
-  // GtkWidget *card1 = create_book_card("Digital Signal Progressing", 100, 90, 24);
-  // gtk_box_pack_start(GTK_BOX(listBox), card1, FALSE, FALSE, 10);
-  // GtkWidget *card2 = create_book_card("Rocket Propulsion Elements", 0, 1, 1);
-  // gtk_box_pack_start(GTK_BOX(listBox), card2, FALSE, FALSE, 10);
-  // GtkWidget *card3 = create_book_card("Linear Algebra Introduction", 20, 50, 24);
-  // gtk_box_pack_start(GTK_BOX(listBox), card3, FALSE, FALSE, 10);
-  // GtkWidget *card4 = create_book_card("Quadruped Robot Leg Design", 50, 10, 4);
-  // gtk_box_pack_start(GTK_BOX(listBox), card4, FALSE, FALSE, 10);
 
   g_signal_connect(G_OBJECT(window), "destroy", G_CALLBACK(gtk_main_quit), NULL);
-
   g_signal_connect(G_OBJECT(quitMi), "activate", G_CALLBACK(gtk_main_quit), NULL);
 
   gtk_widget_show_all(window);
