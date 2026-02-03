@@ -4,6 +4,7 @@
 #include "icons/quit_icon.h"
 #include "icons/streak_icon.h"
 #include "icons/add_icon.h"
+#include "icons/shop_icon.h"
 #include <iostream>
 #include <thread>
 #include <list> 
@@ -134,36 +135,76 @@ int main(int argc, char *argv[])
   GtkWidget *vbox = gtk_vbox_new(FALSE, 0);
   gtk_container_add(GTK_CONTAINER(window), vbox);
 
+  // Title
+  GtkWidget *titleMi = gtk_menu_item_new();
+  GtkWidget *titleLabel = gtk_label_new(NULL);
+  gtk_label_set_markup(GTK_LABEL(titleLabel), "<b>KoScheduler</b>");
+
+  gtk_container_add(GTK_CONTAINER(titleMi), titleLabel);
+  gtk_widget_set_sensitive(titleMi, FALSE);
+  gtk_widget_set_can_focus(titleMi, FALSE);
+
+  gtk_misc_set_alignment(GTK_MISC(titleLabel), 0.5, 0.5);
+
+  // Shop Button
+  GtkWidget *shopMi = gtk_menu_item_new();
+  GtkWidget *shopHbox = gtk_hbox_new(FALSE, 6);
+
+  GtkWidget *shopLabel = gtk_label_new("Open Shop");
+  gtk_box_pack_start(GTK_BOX(shopHbox), shopLabel, FALSE, FALSE, 0);
+
+  GdkPixbuf *shopPixbuf = gdk_pixbuf_new_from_inline(shop_png_len, shop_png, FALSE, NULL);
+  GdkPixbuf *shopScaled = gdk_pixbuf_scale_simple(shopPixbuf, 16, 16, GDK_INTERP_BILINEAR);
+  GtkWidget *shopIcon = gtk_image_new_from_pixbuf(shopScaled);
+  g_object_unref(shopPixbuf);
+  gtk_box_pack_start(GTK_BOX(shopHbox), shopIcon, FALSE, FALSE, 0);
+
+  gtk_container_add(GTK_CONTAINER(shopMi), shopHbox);
+  
+  // Add Book Button
+  GtkWidget *addBookMi = gtk_menu_item_new();
+  GtkWidget *addBookHbox = gtk_hbox_new(FALSE, 6);
+
+  GtkWidget *addBookLabel = gtk_label_new("Add Book From Library");
+  gtk_box_pack_start(GTK_BOX(addBookHbox), addBookLabel, FALSE, FALSE, 0);
+
+  GdkPixbuf *addPixbuf = gdk_pixbuf_new_from_inline(add_png_len, add_png, FALSE, NULL);
+  GdkPixbuf *addScaled = gdk_pixbuf_scale_simple(addPixbuf, 16, 16, GDK_INTERP_BILINEAR);
+  GtkWidget *addIcon = gtk_image_new_from_pixbuf(addScaled);
+  g_object_unref(addPixbuf);
+  gtk_box_pack_start(GTK_BOX(addBookHbox), addIcon, FALSE, FALSE, 0);
+
+  gtk_container_add(GTK_CONTAINER(addBookMi), addBookHbox);
+
   // Quit Button
   GtkWidget *quitMi = gtk_menu_item_new();
 
+  GtkWidget *align = gtk_alignment_new(1.0, 0.5, 0, 0); // xalign=1.0 → right aligned
+
   GdkPixbuf *quitPixbuf = gdk_pixbuf_new_from_inline(quit_png_len, quit_png, FALSE, NULL);
-  GtkWidget *quitIcon = gtk_image_new_from_pixbuf(quitPixbuf);
+  GdkPixbuf *quitScaled = gdk_pixbuf_scale_simple(quitPixbuf, 16, 16, GDK_INTERP_BILINEAR);
+  GtkWidget *quitIcon = gtk_image_new_from_pixbuf(quitScaled);
   g_object_unref(quitPixbuf);
-  gtk_container_add(GTK_CONTAINER(quitMi), quitIcon);
 
-  // Add Book Button
-  GtkWidget *addBookMi = gtk_menu_item_new();
+  gtk_container_add(GTK_CONTAINER(align), quitIcon);
+  gtk_container_add(GTK_CONTAINER(quitMi), align);
 
-  GtkWidget *hbox = gtk_hbox_new(FALSE, 6);
 
-  GdkPixbuf *addPixbuf = gdk_pixbuf_new_from_inline(add_png_len, add_png, FALSE, NULL);
-  GtkWidget *addIcon = gtk_image_new_from_pixbuf(addPixbuf);
-  g_object_unref(addPixbuf);
-  gtk_box_pack_start(GTK_BOX(hbox), addIcon, FALSE, FALSE, 0);
+  // Top Menubar
+  GtkWidget *leftMenubar = gtk_menu_bar_new();
+  gtk_menu_shell_append(GTK_MENU_SHELL(leftMenubar), titleMi);
+  gtk_menu_shell_append(GTK_MENU_SHELL(leftMenubar), shopMi);
+  gtk_menu_shell_append(GTK_MENU_SHELL(leftMenubar), addBookMi);
 
-  GdkPixbuf *bookPixbuf = gdk_pixbuf_new_from_inline(book_png_len, book_png, FALSE, NULL);
-  GtkWidget *bookIcon = gtk_image_new_from_pixbuf(bookPixbuf);
-  g_object_unref(bookPixbuf);
-  gtk_box_pack_start(GTK_BOX(hbox), bookIcon, FALSE, FALSE, 0);
+  GtkWidget *rightMenubar = gtk_menu_bar_new();
+  gtk_menu_shell_append(GTK_MENU_SHELL(rightMenubar), quitMi);
 
-  gtk_container_add(GTK_CONTAINER(addBookMi), hbox);
+  GtkWidget *menubarHBox = gtk_hbox_new(FALSE, 0);
+  gtk_box_pack_start(GTK_BOX(menubarHBox), leftMenubar, TRUE, TRUE, 0);
+  gtk_box_pack_start(GTK_BOX(menubarHBox), rightMenubar, FALSE, FALSE, 0);
 
-  // root / menubar
-  GtkWidget *menubar = gtk_menu_bar_new();
-  gtk_menu_shell_append(GTK_MENU_SHELL(menubar), quitMi);
-  gtk_menu_shell_append(GTK_MENU_SHELL(menubar), addBookMi);
-  gtk_box_pack_start(GTK_BOX(vbox), menubar, FALSE, FALSE, 0);
+  gtk_box_pack_start(GTK_BOX(vbox), menubarHBox, FALSE, FALSE, 0);
+  
 
   // Populate screen with a center aligned scrollable widget
   GtkWidget *currentBooksScrollbar = gtk_scrolled_window_new(NULL, NULL);
