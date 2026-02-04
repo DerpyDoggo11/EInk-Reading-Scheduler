@@ -11,9 +11,10 @@ sqlite_dep = dependency('sqlite3')
 
 sources = files(
   './src/main.cpp',
-  './src/icons/book_icon.h',
-  './src/icons/quit_icon.h',
-  './src/icons/streak_icon.h',
+  './src/utils/mainBookCard.cpp',
+  './src/utils/readDatabase.cpp',
+  './src/screens/mainScreen.cpp',
+  './src/screens/bookInputFieldScreen.cpp',
 )
 
 include_dirs = include_directories('./include/')
