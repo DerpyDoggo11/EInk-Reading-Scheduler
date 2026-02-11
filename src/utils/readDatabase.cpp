@@ -10,9 +10,7 @@ std::list<bookData> retrieveLibraryData(const std::string &databasePath)
 
   std::list<bookData> userData;
 
-  if (sqlite3_open(databasePath.c_str(), &db) != SQLITE_OK)
-  {
-    g_print("Failed to open Kobo database\n");
+  if (sqlite3_open(databasePath.c_str(), &db) != SQLITE_OK) {
     return userData;
   }
 
@@ -24,9 +22,7 @@ std::list<bookData> retrieveLibraryData(const std::string &databasePath)
       "WHERE c.ContentType = 6 "
       "ORDER BY c.Title COLLATE NOCASE;";
 
-  if (sqlite3_prepare_v2(db, sql, -1, &stmt, nullptr) != SQLITE_OK)
-  {
-    g_print("Failed to prepare SQL statement\n");
+  if (sqlite3_prepare_v2(db, sql, -1, &stmt, nullptr) != SQLITE_OK) {
     sqlite3_close(db);
     return userData;
   }
@@ -41,11 +37,15 @@ std::list<bookData> retrieveLibraryData(const std::string &databasePath)
 
     if (titleText) {
       entry.title = reinterpret_cast<const char *>(titleText);
-    } else { entry.title = ""; }
+    } else { 
+      entry.title = ""; 
+    }
 
     if (idText) {
       entry.contentID = reinterpret_cast<const char *>(idText);
-    } else { entry.contentID = ""; }
+    } else { 
+      entry.contentID = ""; 
+    }
     
     entry.progress = progress;
 

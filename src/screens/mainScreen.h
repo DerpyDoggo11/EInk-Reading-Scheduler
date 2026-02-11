@@ -1,4 +1,4 @@
 #pragma once
 #include <gtk/gtk.h>
 
-GtkWidget* createMainScreen(GtkWidget *window);
+void openMainScreen(GtkWidget *vBox);

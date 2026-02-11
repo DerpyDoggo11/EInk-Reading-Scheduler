@@ -6,5 +6,4 @@
 #include <list> 
 #include <string>
 
-void hideBookSelectorScreen();
-GtkWidget* createBookSelectorScreen(GtkWidget *window);
+void openBookSelectorScreen(GtkWidget *vBox);

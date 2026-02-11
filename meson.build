@@ -13,8 +13,10 @@ sources = files(
   './src/main.cpp',
   './src/utils/mainBookCard.cpp',
   './src/utils/readDatabase.cpp',
+  './src/utils/generalUtils.cpp',
+  './src/utils/localDatabase.cpp',
+  './src/screens/bookSelectorScreen.cpp',
   './src/screens/mainScreen.cpp',
-  './src/screens/bookInputFieldScreen.cpp',
 )
 
 include_dirs = include_directories('./include/')

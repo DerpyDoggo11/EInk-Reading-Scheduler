@@ -1,4 +1,9 @@
-#pragma once
-#include <gtk/gtk.h>
+#ifndef MAIN_BOOK_CARD_H
+#define MAIN_BOOK_CARD_H
 
-GtkWidget* create_book_card(const char* title, float currentProgress, float totalProgress, float streak);
+#include <gtk-2.0/gtk/gtk.h>
+#include <string>
+
+GtkWidget* create_book_card(const std::string title, float currentProgress, float requiredDailyPages, float totalPagesRemaining, int daysUntilCompletion, int streak, GtkWidget *vBox);
+
+#endif
