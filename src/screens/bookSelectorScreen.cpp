@@ -19,28 +19,31 @@ const std::string LOCAL_DB_PATH = "./emulator/kobo/selected_books.db";
 // const std::string LOCAL_DB_PATH = "/mnt/onboard/.kobo/selected_books.db";
 
 struct BookSelectorData {
-    GtkWidget *combo;
-    GtkWidget *spinButton;
     GtkWidget *vBox;
     GtkWidget *errorLabel;
     GtkWidget *confirmMi;
+    GtkWidget *daysLabel;
     std::map<std::string, float> *bookPagesMap;
+    std::string selectedBookTitle;
+    int daysToFinish;
 };
 
+void updateDaysLabel(BookSelectorData *data) {
+    std::string daysText = "Days to finish: " + std::to_string(data->daysToFinish);
+    gtk_label_set_markup(GTK_LABEL(data->daysLabel),setWhiteMarkup(daysText, 13000).c_str());
+}
+
 void updateValidation(BookSelectorData *data) {
-    gchar *selectedTitle = gtk_combo_box_get_active_text(GTK_COMBO_BOX(data->combo));
-    int daysToFinish = gtk_spin_button_get_value_as_int(GTK_SPIN_BUTTON(data->spinButton));
-    
     bool isValid = true;
     std::string errorMsg = "";
     
-    if (!selectedTitle || strlen(selectedTitle) == 0 || std::string(selectedTitle) == "-- select a book --") {
+    if (data->selectedBookTitle.empty()) {
         isValid = false;
         errorMsg = "Select a book from the list";
-    } else if (isBookSelected(LOCAL_DB_PATH, selectedTitle)) {
+    } else if (isBookSelected(LOCAL_DB_PATH, data->selectedBookTitle)) {
         isValid = false;
         errorMsg = "This book is already in your reading list";
-    } else if (daysToFinish < 1) {
+    } else if (data->daysToFinish < 1) {
         isValid = false;
         errorMsg = "Days to finish must be at least 1";
     }
@@ -54,16 +57,34 @@ void updateValidation(BookSelectorData *data) {
     }
     
     gtk_widget_set_sensitive(data->confirmMi, isValid);
-    
-    if (selectedTitle) g_free(selectedTitle);
 }
 
-void on_combo_changed(GtkWidget *combo, gpointer user_data) {
-    updateValidation((BookSelectorData *)user_data);
+void on_days_decrease(GtkWidget *button, gpointer user_data) {
+    BookSelectorData *data = (BookSelectorData *)user_data;
+    if (data->daysToFinish > 1) {
+        data->daysToFinish--;
+        updateDaysLabel(data);
+        updateValidation(data);
+    }
 }
 
-void on_spin_changed(GtkWidget *spin, gpointer user_data) {
-    updateValidation((BookSelectorData *)user_data);
+void on_days_increase(GtkWidget *button, gpointer user_data) {
+    BookSelectorData *data = (BookSelectorData *)user_data;
+    if (data->daysToFinish < 365) {
+        data->daysToFinish++;
+        updateDaysLabel(data);
+        updateValidation(data);
+    }
+}
+
+void on_book_item_clicked(GtkWidget *button, gpointer user_data) {
+    BookSelectorData *data = (BookSelectorData *)user_data;
+    const gchar *title = gtk_button_get_label(GTK_BUTTON(button));
+
+    data->selectedBookTitle = std::string(title);
+    updateValidation(data);
+
+    std::cout << "Selected book: " << data->selectedBookTitle << std::endl;
 }
 
 void on_button_back(GtkWidget *menuItem, gpointer user_data) {
@@ -75,33 +96,27 @@ void on_button_back(GtkWidget *menuItem, gpointer user_data) {
 
 void on_button_confirm(GtkWidget *menuItem, gpointer user_data) {
     BookSelectorData *data = (BookSelectorData *)user_data;
-    gchar *selectedTitle = gtk_combo_box_get_active_text(GTK_COMBO_BOX(data->combo));
 
-    if (!selectedTitle || strlen(selectedTitle) == 0 || std::string(selectedTitle) == "-- Select a book --") {
-        if (selectedTitle) g_free(selectedTitle);
+    if (data->selectedBookTitle.empty()) {
         return;
     }
 
-    int daysToFinish = gtk_spin_button_get_value_as_int(GTK_SPIN_BUTTON(data->spinButton));
-
-    if (daysToFinish < 1) {
-        g_free(selectedTitle);
+    if (data->daysToFinish < 1) {
         return;
     }
 
     float totalPages = 100.0f;
-    if (data->bookPagesMap && data->bookPagesMap->find(selectedTitle) != data->bookPagesMap->end()) {
-        totalPages = (*data->bookPagesMap)[selectedTitle];
+    if (data->bookPagesMap && data->bookPagesMap->find(data->selectedBookTitle) != data->bookPagesMap->end()) {
+        totalPages = (*data->bookPagesMap)[data->selectedBookTitle];
     }
 
     initLocalDatabase(LOCAL_DB_PATH);
 
-    if (isBookSelected(LOCAL_DB_PATH, selectedTitle)) {
-        g_free(selectedTitle);
+    if (isBookSelected(LOCAL_DB_PATH, data->selectedBookTitle)) {
         return;
     }
 
-    if (addSelectedBook(LOCAL_DB_PATH, selectedTitle, daysToFinish, totalPages)) {
+    if (addSelectedBook(LOCAL_DB_PATH, data->selectedBookTitle, data->daysToFinish, totalPages)) {
         delete data->bookPagesMap;
         GtkWidget *vBox = data->vBox;
         delete data;
@@ -111,8 +126,6 @@ void on_button_confirm(GtkWidget *menuItem, gpointer user_data) {
         gtk_label_set_markup(GTK_LABEL(data->errorLabel), markup.c_str());
         gtk_widget_show(data->errorLabel);
     }
-
-    g_free(selectedTitle);
 }
 
 void openBookSelectorScreen(GtkWidget *vBox){
@@ -139,49 +152,90 @@ void openBookSelectorScreen(GtkWidget *vBox){
     gtk_label_set_markup(GTK_LABEL(titleLabel), setWhiteMarkup("Add Book to Reading List", 15000).c_str());
     gtk_box_pack_start(GTK_BOX(screenVBox), titleLabel, FALSE, FALSE, 10);
 
-    GtkWidget *contentVBox = gtk_vbox_new(FALSE, 15);
-    gtk_box_pack_start(GTK_BOX(screenVBox), contentVBox, TRUE, FALSE, 20);
-
     GtkWidget *bookLabel = gtk_label_new(NULL);
     gtk_label_set_markup(GTK_LABEL(bookLabel), setWhiteMarkup("Select a book from your library:", 12000).c_str());
     gtk_misc_set_alignment(GTK_MISC(bookLabel), 0.0, 0.5);
-    gtk_box_pack_start(GTK_BOX(contentVBox), bookLabel, FALSE, FALSE, 5);
+    gtk_box_pack_start(GTK_BOX(screenVBox), bookLabel, FALSE, FALSE, 5);
 
-    GtkWidget *bookCombo = gtk_combo_box_new_text();
+    GtkWidget *booksScrollbar = gtk_scrolled_window_new(NULL, NULL);
+    setBackground(booksScrollbar, "#fff");
+    gtk_scrolled_window_set_policy(GTK_SCROLLED_WINDOW(booksScrollbar), GTK_POLICY_NEVER, GTK_POLICY_AUTOMATIC);
+    gtk_box_pack_start(GTK_BOX(screenVBox), booksScrollbar, TRUE, TRUE, 5);
+
+    gtk_widget_set_app_paintable(booksScrollbar, TRUE);
+    gtk_widget_set_double_buffered(booksScrollbar, FALSE);
+
+    GtkWidget *centerAlign = gtk_alignment_new(0.5, 0, 0.95, 0);
+    GtkWidget *listBox = gtk_vbox_new(FALSE, 5);
+    setBackground(listBox, "#fff");
+    gtk_widget_set_app_paintable(listBox, TRUE);
+    gtk_widget_set_double_buffered(listBox, FALSE);
+
+    gtk_container_add(GTK_CONTAINER(centerAlign), listBox);
+    gtk_scrolled_window_add_with_viewport(GTK_SCROLLED_WINDOW(booksScrollbar), centerAlign);
 
     std::list<bookData> libraryBooks = retrieveLibraryData(KOBO_DB_PATH);
     
     std::map<std::string, float> *bookPagesMap = new std::map<std::string, float>();
 
-    if (libraryBooks.empty()) {
-        gtk_combo_box_append_text(GTK_COMBO_BOX(bookCombo), "No books found in library");
-    } else {
-        gtk_combo_box_append_text(GTK_COMBO_BOX(bookCombo), "-- Select a book --");
+    BookSelectorData *callbackData = new BookSelectorData;
+    callbackData->vBox = vBox;
+    callbackData->bookPagesMap = bookPagesMap;
+    callbackData->daysToFinish = 7; 
+    callbackData->selectedBookTitle = ""; 
 
+    if (libraryBooks.empty()) {
+        GtkWidget *emptyLabel = gtk_label_new(NULL);
+        gtk_label_set_markup(GTK_LABEL(emptyLabel), setWhiteMarkup("No books found in library", 12000).c_str());
+        gtk_box_pack_start(GTK_BOX(listBox), emptyLabel, TRUE, FALSE, 50);
+    } else {
         for (auto &book : libraryBooks) {
             if (!book.title.empty()) {
-                gtk_combo_box_append_text(GTK_COMBO_BOX(bookCombo), book.title.c_str());
+
+                GtkWidget *bookButton = gtk_button_new_with_label(book.title.c_str());
+                gtk_button_set_relief(GTK_BUTTON(bookButton), GTK_RELIEF_NORMAL);
+                gtk_widget_set_size_request(bookButton, -1, 50);
+
                 float estimatedTotalPages = 300.0f;
                 (*bookPagesMap)[book.title] = estimatedTotalPages;
+
+                g_signal_connect(G_OBJECT(bookButton), "clicked", G_CALLBACK(on_book_item_clicked), callbackData);
+
+                gtk_box_pack_start(GTK_BOX(listBox), bookButton, FALSE, FALSE, 2);
             }
         }
-        gtk_combo_box_set_active(GTK_COMBO_BOX(bookCombo), 0);
     }
 
-    gtk_box_pack_start(GTK_BOX(contentVBox), bookCombo, FALSE, FALSE, 5);
+    GtkWidget *daysSection = gtk_vbox_new(FALSE, 10);
+    gtk_box_pack_start(GTK_BOX(screenVBox), daysSection, FALSE, FALSE, 10);
 
     GtkWidget *finishLabel = gtk_label_new(NULL);
     gtk_label_set_markup(GTK_LABEL(finishLabel), setWhiteMarkup("How fast do you want to finish? (in days)", 12000).c_str());
-    gtk_misc_set_alignment(GTK_MISC(finishLabel), 0.0, 0.5);
-    gtk_box_pack_start(GTK_BOX(contentVBox), finishLabel, FALSE, FALSE, 5);
+    gtk_misc_set_alignment(GTK_MISC(finishLabel), 0.5, 0.5);
+    gtk_box_pack_start(GTK_BOX(daysSection), finishLabel, FALSE, FALSE, 5);
 
-    GtkAdjustment *daysAdjustment = GTK_ADJUSTMENT(gtk_adjustment_new(7, 1, 365, 1, 10, 0));
-    GtkWidget *daysSpin = gtk_spin_button_new(GTK_ADJUSTMENT(daysAdjustment), 1, 0);
-    gtk_box_pack_start(GTK_BOX(contentVBox), daysSpin, FALSE, FALSE, 5);
+    GtkWidget *daysControlBox = gtk_hbox_new(FALSE, 10);
+    gtk_box_pack_start(GTK_BOX(daysSection), daysControlBox, FALSE, FALSE, 0);
+
+    GtkWidget *decreaseButton = gtk_button_new_with_label("-");
+    gtk_widget_set_size_request(decreaseButton, 60, 60);
+    gtk_box_pack_start(GTK_BOX(daysControlBox), decreaseButton, FALSE, FALSE, 0);
+
+    GtkWidget *daysLabel = gtk_label_new(NULL);
+    gtk_label_set_markup(GTK_LABEL(daysLabel), setWhiteMarkup("Days to finish: 7", 13000).c_str());
+    gtk_box_pack_start(GTK_BOX(daysControlBox), daysLabel, TRUE, TRUE, 10);
+    callbackData->daysLabel = daysLabel;
+
+    GtkWidget *increaseButton = gtk_button_new_with_label("+");
+    gtk_widget_set_size_request(increaseButton, 60, 60);
+    gtk_box_pack_start(GTK_BOX(daysControlBox), increaseButton, FALSE, FALSE, 0);
+
 
     GtkWidget *errorLabel = gtk_label_new(NULL);
-    gtk_box_pack_start(GTK_BOX(contentVBox), errorLabel, FALSE, FALSE, 10);
+    gtk_box_pack_start(GTK_BOX(screenVBox), errorLabel, FALSE, FALSE, 10);
     gtk_widget_set_no_show_all(errorLabel, TRUE); 
+    callbackData->errorLabel = errorLabel;
+
 
     GtkWidget *confirmMi = gtk_menu_item_new(); 
     GtkWidget *confirmLabel = gtk_label_new(NULL); 
@@ -190,19 +244,11 @@ void openBookSelectorScreen(GtkWidget *vBox){
 
     GtkWidget *confirmMenubar = gtk_menu_bar_new();
     gtk_menu_shell_append(GTK_MENU_SHELL(confirmMenubar), confirmMi); 
-    gtk_box_pack_start(GTK_BOX(contentVBox), confirmMenubar, FALSE, FALSE, 10); 
-
-    BookSelectorData *callbackData = new BookSelectorData;
-    callbackData->combo = bookCombo;
-    callbackData->spinButton = daysSpin;
-    callbackData->vBox = vBox;
-    callbackData->bookPagesMap = bookPagesMap;
-    callbackData->errorLabel = errorLabel;
+    gtk_box_pack_start(GTK_BOX(screenVBox), confirmMenubar, FALSE, FALSE, 10); 
     callbackData->confirmMi = confirmMi;
 
-    g_signal_connect(G_OBJECT(bookCombo), "changed", G_CALLBACK(on_combo_changed), callbackData);
-    g_signal_connect(G_OBJECT(daysSpin), "value-changed", G_CALLBACK(on_spin_changed), callbackData);
-    
+    g_signal_connect(G_OBJECT(decreaseButton), "clicked", G_CALLBACK(on_days_decrease), callbackData);
+    g_signal_connect(G_OBJECT(increaseButton), "clicked", G_CALLBACK(on_days_increase), callbackData);
     g_signal_connect(G_OBJECT(backMi), "activate", G_CALLBACK(on_button_back), callbackData);
     g_signal_connect(G_OBJECT(confirmMi), "activate", G_CALLBACK(on_button_confirm), callbackData);
 
