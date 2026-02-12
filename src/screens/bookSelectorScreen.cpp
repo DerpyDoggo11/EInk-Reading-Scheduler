@@ -62,16 +62,35 @@ void updateValidation(BookSelectorData *data) {
 void on_days_decrease(GtkWidget *button, gpointer user_data) {
     BookSelectorData *data = (BookSelectorData *)user_data;
     if (data->daysToFinish > 1) {
-        data->daysToFinish--;
+        data->daysToFinish = data->daysToFinish - 1;
         updateDaysLabel(data);
         updateValidation(data);
     }
 }
 
+void on_days_big_decrease(GtkWidget *button, gpointer user_data) {
+    BookSelectorData *data = (BookSelectorData *)user_data;
+    if ((data->daysToFinish - 9) > 1) {
+        data->daysToFinish = data->daysToFinish - 10;
+        updateDaysLabel(data);
+        updateValidation(data);
+    }
+}
+
+
 void on_days_increase(GtkWidget *button, gpointer user_data) {
     BookSelectorData *data = (BookSelectorData *)user_data;
     if (data->daysToFinish < 365) {
-        data->daysToFinish++;
+        data->daysToFinish = data->daysToFinish + 1;
+        updateDaysLabel(data);
+        updateValidation(data);
+    }
+}
+
+void on_days_big_increase(GtkWidget *button, gpointer user_data) {
+    BookSelectorData *data = (BookSelectorData *)user_data;
+    if ((data->daysToFinish + 10) < 365) {
+        data->daysToFinish = data->daysToFinish + 10;
         updateDaysLabel(data);
         updateValidation(data);
     }
@@ -89,9 +108,10 @@ void on_book_item_clicked(GtkWidget *button, gpointer user_data) {
 
 void on_button_back(GtkWidget *menuItem, gpointer user_data) {
     BookSelectorData *data = (BookSelectorData *)user_data;
+    GtkWidget *vBox = data->vBox;
     delete data->bookPagesMap;
     delete data;
-    openMainScreen(GTK_WIDGET(((BookSelectorData *)user_data)->vBox));
+    openMainScreen(vBox);
 }
 
 void on_button_confirm(GtkWidget *menuItem, gpointer user_data) {
@@ -154,7 +174,7 @@ void openBookSelectorScreen(GtkWidget *vBox){
 
     GtkWidget *bookLabel = gtk_label_new(NULL);
     gtk_label_set_markup(GTK_LABEL(bookLabel), setWhiteMarkup("Select a book from your library:", 12000).c_str());
-    gtk_misc_set_alignment(GTK_MISC(bookLabel), 0.0, 0.5);
+    //gtk_misc_set_alignment(GTK_MISC(bookLabel), 0.0, 0.5);
     gtk_box_pack_start(GTK_BOX(screenVBox), bookLabel, FALSE, FALSE, 5);
 
     GtkWidget *booksScrollbar = gtk_scrolled_window_new(NULL, NULL);
@@ -165,14 +185,14 @@ void openBookSelectorScreen(GtkWidget *vBox){
     gtk_widget_set_app_paintable(booksScrollbar, TRUE);
     gtk_widget_set_double_buffered(booksScrollbar, FALSE);
 
-    GtkWidget *centerAlign = gtk_alignment_new(0.5, 0, 0.95, 0);
+    //GtkWidget *centerAlign = gtk_alignment_new(0.5, 0, 0.95, 0);
     GtkWidget *listBox = gtk_vbox_new(FALSE, 5);
     setBackground(listBox, "#fff");
     gtk_widget_set_app_paintable(listBox, TRUE);
     gtk_widget_set_double_buffered(listBox, FALSE);
 
-    gtk_container_add(GTK_CONTAINER(centerAlign), listBox);
-    gtk_scrolled_window_add_with_viewport(GTK_SCROLLED_WINDOW(booksScrollbar), centerAlign);
+    //gtk_container_add(GTK_CONTAINER(centerAlign), listBox);
+    gtk_scrolled_window_add_with_viewport(GTK_SCROLLED_WINDOW(booksScrollbar), listBox);
 
     std::list<bookData> libraryBooks = retrieveLibraryData(KOBO_DB_PATH);
     
@@ -206,16 +226,28 @@ void openBookSelectorScreen(GtkWidget *vBox){
         }
     }
 
-    GtkWidget *daysSection = gtk_vbox_new(FALSE, 10);
-    gtk_box_pack_start(GTK_BOX(screenVBox), daysSection, FALSE, FALSE, 10);
 
+    GtkWidget *errorLabel = gtk_label_new(NULL);
+    gtk_box_pack_start(GTK_BOX(screenVBox), errorLabel, FALSE, FALSE, 10);
+    gtk_widget_set_no_show_all(errorLabel, TRUE); 
+    callbackData->errorLabel = errorLabel;
+
+    GtkWidget *daysSection = gtk_vbox_new(FALSE, 5);
+    gtk_box_pack_start(GTK_BOX(screenVBox), daysSection, FALSE, FALSE, 5);
+    
     GtkWidget *finishLabel = gtk_label_new(NULL);
     gtk_label_set_markup(GTK_LABEL(finishLabel), setWhiteMarkup("How fast do you want to finish? (in days)", 12000).c_str());
     gtk_misc_set_alignment(GTK_MISC(finishLabel), 0.5, 0.5);
     gtk_box_pack_start(GTK_BOX(daysSection), finishLabel, FALSE, FALSE, 5);
 
-    GtkWidget *daysControlBox = gtk_hbox_new(FALSE, 10);
-    gtk_box_pack_start(GTK_BOX(daysSection), daysControlBox, FALSE, FALSE, 0);
+    GtkWidget *daysControlAlign = gtk_alignment_new(0.5, 0.5, 0, 0);
+    GtkWidget *daysControlBox = gtk_hbox_new(FALSE, 15);
+    gtk_container_add(GTK_CONTAINER(daysControlAlign), daysControlBox);
+    gtk_box_pack_start(GTK_BOX(daysSection), daysControlAlign, FALSE, FALSE, 0);
+
+    GtkWidget *bigDecreaseButton = gtk_button_new_with_label("--");
+    gtk_widget_set_size_request(bigDecreaseButton, 60, 60);
+    gtk_box_pack_start(GTK_BOX(daysControlBox), bigDecreaseButton, FALSE, FALSE, 0);
 
     GtkWidget *decreaseButton = gtk_button_new_with_label("-");
     gtk_widget_set_size_request(decreaseButton, 60, 60);
@@ -223,34 +255,34 @@ void openBookSelectorScreen(GtkWidget *vBox){
 
     GtkWidget *daysLabel = gtk_label_new(NULL);
     gtk_label_set_markup(GTK_LABEL(daysLabel), setWhiteMarkup("Days to finish: 7", 13000).c_str());
-    gtk_box_pack_start(GTK_BOX(daysControlBox), daysLabel, TRUE, TRUE, 10);
+    gtk_box_pack_start(GTK_BOX(daysControlBox), daysLabel, FALSE, FALSE, 20);
     callbackData->daysLabel = daysLabel;
 
     GtkWidget *increaseButton = gtk_button_new_with_label("+");
     gtk_widget_set_size_request(increaseButton, 60, 60);
     gtk_box_pack_start(GTK_BOX(daysControlBox), increaseButton, FALSE, FALSE, 0);
 
+    GtkWidget *bigIncreaseButton = gtk_button_new_with_label("++");
+    gtk_widget_set_size_request(bigIncreaseButton, 60, 60);
+    gtk_box_pack_start(GTK_BOX(daysControlBox), bigIncreaseButton, FALSE, FALSE, 0);
 
-    GtkWidget *errorLabel = gtk_label_new(NULL);
-    gtk_box_pack_start(GTK_BOX(screenVBox), errorLabel, FALSE, FALSE, 10);
-    gtk_widget_set_no_show_all(errorLabel, TRUE); 
-    callbackData->errorLabel = errorLabel;
-
-
-    GtkWidget *confirmMi = gtk_menu_item_new(); 
+    GtkWidget *confirmAlign = gtk_alignment_new(0.5, 0.5, 0, 0);
+    GtkWidget *confirmMi = gtk_button_new();
     GtkWidget *confirmLabel = gtk_label_new(NULL); 
-    gtk_label_set_markup(GTK_LABEL(confirmLabel), setWhiteMarkup("Add Book to Reading List", 12000).c_str());
-    gtk_container_add(GTK_CONTAINER(confirmMi), confirmLabel); 
-
-    GtkWidget *confirmMenubar = gtk_menu_bar_new();
-    gtk_menu_shell_append(GTK_MENU_SHELL(confirmMenubar), confirmMi); 
-    gtk_box_pack_start(GTK_BOX(screenVBox), confirmMenubar, FALSE, FALSE, 10); 
+    gtk_label_set_markup(GTK_LABEL(confirmLabel), setWhiteMarkup("Add Book to Reading List", 13000).c_str());
+    gtk_container_add(GTK_CONTAINER(confirmMi), confirmLabel);
+    gtk_widget_set_size_request(confirmMi, 400, 60);
+    
+    gtk_container_add(GTK_CONTAINER(confirmAlign), confirmMi);
+    gtk_box_pack_start(GTK_BOX(screenVBox), confirmAlign, FALSE, FALSE, 10);
     callbackData->confirmMi = confirmMi;
 
     g_signal_connect(G_OBJECT(decreaseButton), "clicked", G_CALLBACK(on_days_decrease), callbackData);
+    g_signal_connect(G_OBJECT(bigDecreaseButton), "clicked", G_CALLBACK(on_days_big_decrease), callbackData);
     g_signal_connect(G_OBJECT(increaseButton), "clicked", G_CALLBACK(on_days_increase), callbackData);
+    g_signal_connect(G_OBJECT(bigIncreaseButton), "clicked", G_CALLBACK(on_days_big_increase), callbackData);
     g_signal_connect(G_OBJECT(backMi), "activate", G_CALLBACK(on_button_back), callbackData);
-    g_signal_connect(G_OBJECT(confirmMi), "activate", G_CALLBACK(on_button_confirm), callbackData);
+    g_signal_connect(G_OBJECT(confirmMi), "clicked", G_CALLBACK(on_button_confirm), callbackData);
 
     updateValidation(callbackData);
 
