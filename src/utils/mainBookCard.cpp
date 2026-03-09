@@ -61,26 +61,24 @@ void showRemoveConfirmationScreen(const std::string &title, GtkWidget *vBox) {
 
     GtkWidget *cancelMi = gtk_menu_item_new();
     GtkWidget *cancelLabel = gtk_label_new(NULL);
-    gtk_label_set_markup(GTK_LABEL(cancelLabel), setMarkup("Cancel", 13000).c_str());
+    gtk_label_set_markup(GTK_LABEL(cancelLabel), "<span size=\"13000\" foreground=\"#ffffff\">Cancel</span>");
     gtk_container_add(GTK_CONTAINER(cancelMi), cancelLabel);
 
     GtkWidget *cancelMenubar = gtk_menu_bar_new();
     gtk_menu_shell_append(GTK_MENU_SHELL(cancelMenubar), cancelMi);
 
-    // Wrap in alignment to center it within its half of buttonBox
     GtkWidget *cancelAlign = gtk_alignment_new(0.5, 0.5, 0, 0);
     gtk_container_add(GTK_CONTAINER(cancelAlign), cancelMenubar);
     gtk_box_pack_start(GTK_BOX(buttonBox), cancelAlign, TRUE, TRUE, 0);
 
     GtkWidget *confirmMi = gtk_menu_item_new();
     GtkWidget *confirmLabel = gtk_label_new(NULL);
-    gtk_label_set_markup(GTK_LABEL(confirmLabel), "<span size=\"13000\" foreground=\"#ff3333\">Remove Book</span>");
+    gtk_label_set_markup(GTK_LABEL(confirmLabel), "<span size=\"13000\" foreground=\"#939393\">Remove Book</span>");
     gtk_container_add(GTK_CONTAINER(confirmMi), confirmLabel);
 
     GtkWidget *confirmMenubar = gtk_menu_bar_new();
     gtk_menu_shell_append(GTK_MENU_SHELL(confirmMenubar), confirmMi);
 
-    // Same for confirm button
     GtkWidget *confirmAlign = gtk_alignment_new(0.5, 0.5, 0, 0);
     gtk_container_add(GTK_CONTAINER(confirmAlign), confirmMenubar);
     gtk_box_pack_start(GTK_BOX(buttonBox), confirmAlign, TRUE, TRUE, 0);

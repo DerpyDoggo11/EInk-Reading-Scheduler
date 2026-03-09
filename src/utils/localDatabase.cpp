@@ -38,7 +38,6 @@ bool createDirectoryRecursive(const std::string &path) {
 int daysBetweenDates(const std::string &date1, const std::string &date2) {
     struct tm tm1 = {0}, tm2 = {0};
     
-    // format is year/month/day
     sscanf(date1.c_str(), "%d-%d-%d", &tm1.tm_year, &tm1.tm_mon, &tm1.tm_mday);
     sscanf(date2.c_str(), "%d-%d-%d", &tm2.tm_year, &tm2.tm_mon, &tm2.tm_mday);
     
@@ -245,7 +244,6 @@ bool updateBookProgress(const std::string &databasePath, const std::string &titl
         return false;
     }
     
-    // Get current book data
     const char *selectSql = "SELECT last_progress, last_open_date, streak FROM selected_books WHERE title = ?;";
     
     if (sqlite3_prepare_v2(db, selectSql, -1, &selectStmt, nullptr) != SQLITE_OK) {
@@ -279,7 +277,7 @@ bool updateBookProgress(const std::string &databasePath, const std::string &titl
             if (currentProgress > lastProgress) {
                 newStreak++;
             } else {
-                newStreak = 0;  // opened app next day but hadn't read
+                newStreak = 0;
                 
             }
         }

@@ -14,7 +14,6 @@ std::list<bookData> retrieveLibraryData(const std::string &databasePath)
     return userData;
   }
 
-  // join content and content settings database, then filter the values
   const char *sql =
       "SELECT c.Title, c.ContentID, cs.Progress "
       "FROM content c "

@@ -48,7 +48,7 @@ void updateValidation(BookSelectorData *data) {
     }
     
     if (!errorMsg.empty()) {
-        std::string markup = "<span size=\"11000\" foreground=\"#ff3333\">" + errorMsg + "</span>";
+        std::string markup = "<span size=\"11000\" foreground=\"#939393\">" + errorMsg + "</span>";
         gtk_label_set_markup(GTK_LABEL(data->errorLabel), markup.c_str());
         gtk_widget_show(data->errorLabel);
     } else {
@@ -134,7 +134,7 @@ void on_button_confirm(GtkWidget *menuItem, gpointer user_data) {
         delete data;
         openMainScreen(vBox);
     } else {
-        std::string markup = "<span size=\"11000\" foreground=\"#ff3333\">Failed to add book. Please try again.</span>";
+        std::string markup = "<span size=\"11000\" foreground=\"#000000\">Failed to add book. Please try again.</span>";
         gtk_label_set_markup(GTK_LABEL(data->errorLabel), markup.c_str());
         gtk_widget_show(data->errorLabel);
     }
