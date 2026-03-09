@@ -21,12 +21,12 @@
 #include <sstream>
 #include <iomanip>
 
-const std::string KOBO_DB_PATH = "./emulator/kobo/.kobo/KoboReader.sqlite";
-const std::string LOCAL_DB_PATH = "./emulator/kobo/selected_books.db";
+//const std::string KOBO_DB_PATH = "./emulator/kobo/.kobo/KoboReader.sqlite";
+//const std::string LOCAL_DB_PATH = "./emulator/kobo/selected_books.db";
 
 // actual kobo paths (uncomment for actual kobos)
-// const std::string KOBO_DB_PATH = "/mnt/onboard/.kobo/KoboReader.sqlite";
-// const std::string LOCAL_DB_PATH = "/mnt/onboard/.kobo/selected_books.db";
+const std::string KOBO_DB_PATH = "/mnt/onboard/.kobo/KoboReader.sqlite";
+const std::string LOCAL_DB_PATH = "/mnt/onboard/.kobo/selected_books.db";
 
 
 void on_button_addBook(GtkWidget *menuItem, gpointer user_data) {
