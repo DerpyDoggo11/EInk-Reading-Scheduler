@@ -90,6 +90,22 @@ bool initLocalDatabase(const std::string &databasePath) {
         return false;
     }
 
+    const char *xpSql = 
+    "CREATE TABLE IF NOT EXISTS xp_data ("
+    "id INTEGER PRIMARY KEY CHECK (id = 1),"
+    "xp INTEGER DEFAULT 0,"
+    "level INTEGER DEFAULT 1"
+    ");";
+
+    if (sqlite3_exec(db, xpSql, nullptr, nullptr, &errorMessage) != SQLITE_OK) {
+        sqlite3_free(errorMessage);
+        sqlite3_close(db);
+        return false;
+    }
+
+    const char *xpInsertSql = "INSERT OR IGNORE INTO xp_data (id, xp, level) VALUES (1, 0, 1);";
+    sqlite3_exec(db, xpInsertSql, nullptr, nullptr, nullptr);
+
     sqlite3_close(db);
     return true;
 }
@@ -309,5 +325,73 @@ bool updateBookProgress(const std::string &databasePath, const std::string &titl
     std::cout << "Updated " << title << ": progress=" << currentProgress 
               << ", streak=" << newStreak << "\n";
     
+    return success;
+}
+
+xpData getXpData(const std::string &databasePath) {
+    sqlite3 *db = nullptr;
+    sqlite3_stmt *stmt = nullptr;
+    xpData data = {0, 1};
+
+    if (sqlite3_open(databasePath.c_str(), &db) != SQLITE_OK) return data;
+    const char *sql = "SELECT xp, level FROM xp_data WHERE id = 1;";
+    if (sqlite3_prepare_v2(db, sql, -1, &stmt, nullptr) != SQLITE_OK) {
+        sqlite3_close(db);
+        return data;
+    }
+
+    if (sqlite3_step(stmt) == SQLITE_ROW) {
+        data.xp = sqlite3_column_int(stmt, 0);
+        data.level = sqlite3_column_int(stmt, 1);
+    }
+
+    sqlite3_finalize(stmt);
+    sqlite3_close(db);
+    return data;
+}
+
+int xpForNextLevel(int level) {
+    return 100 * level;
+}
+
+bool addXp(const std::string &databasePath, int amount) {
+    sqlite3 *db = nullptr;
+    sqlite3_stmt *stmt = nullptr;
+
+    if (sqlite3_open(databasePath.c_str(), &db) != SQLITE_OK) return false;
+
+    const char *selectSql = "SELECT xp, level FROM xp_data WHERE id = 1;";
+    if (sqlite3_prepare_v2(db, selectSql, -1, &stmt, nullptr) != SQLITE_OK) {
+        sqlite3_close(db);
+        return false;
+    }
+
+    int currentXp = 0;
+    int currentLevel = 1;
+    if (sqlite3_step(stmt) == SQLITE_ROW) {
+        currentXp = sqlite3_column_int(stmt, 0);
+        currentLevel = sqlite3_column_int(stmt, 1);
+    }
+    sqlite3_finalize(stmt);
+
+    int newXp = currentXp + amount;
+    int newLevel = currentLevel;
+
+    while (newXp >= xpForNextLevel(newLevel)) {
+        newXp -= xpForNextLevel(newLevel);
+        newLevel++;
+    }
+
+    const char *updateSql = "UPDATE xp_data SET xp = ?, level = ? WHERE id = 1;";
+    if (sqlite3_prepare_v2(db, updateSql, -1, &stmt, nullptr) != SQLITE_OK) {
+        sqlite3_close(db);
+        return false;
+    }
+
+    sqlite3_bind_int(stmt, 1, newXp);
+    sqlite3_bind_int(stmt, 2, newLevel);
+    bool success = (sqlite3_step(stmt) == SQLITE_DONE);
+    sqlite3_finalize(stmt);
+    sqlite3_close(db);
     return success;
 }

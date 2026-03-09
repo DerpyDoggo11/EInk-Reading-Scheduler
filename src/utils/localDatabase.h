@@ -22,4 +22,12 @@ bool removeSelectedBook(const std::string &databasePath, const std::string &titl
 bool updateBookProgress(const std::string &databasePath, const std::string &title, float currentProgress, const std::string &currentDate);
 int daysBetweenDates(const std::string &date1, const std::string &date2);
 
+struct xpData {
+    int xp;
+    int level;
+};
+
+xpData getXpData(const std::string &databasePath);
+bool addXp(const std::string &databasePath, int amount);
+
 #endif

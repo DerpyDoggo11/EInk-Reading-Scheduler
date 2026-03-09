@@ -43,6 +43,10 @@ void openMainScreen(GtkWidget *vBox){
     
     std::string currentDate = getCurrentDate();
 
+    xpData xp = getXpData(LOCAL_DB_PATH);
+    int xpNeeded = 100 * xp.level;
+    float xpPercent = (float)xp.xp / xpNeeded;
+
     GtkWidget *titleMi = gtk_menu_item_new();
     GtkWidget *titleLabel = gtk_label_new(NULL);
     gtk_label_set_markup(GTK_LABEL(titleLabel), setMarkup("KoScheduler", 15000).c_str());
@@ -119,9 +123,47 @@ void openMainScreen(GtkWidget *vBox){
     GtkWidget *menubarHBox = gtk_hbox_new(FALSE, 0);
     setBackground(menubarHBox, "#fff");
 
-    gtk_box_pack_start(GTK_BOX(menubarHBox), mainMenuLeftMenubar, TRUE, TRUE, 0);
+    GtkWidget *xpHBox = gtk_hbox_new(FALSE, 6);
+    setBackground(xpHBox, "#fff");
+
+    std::string xpText = "Lv." + std::to_string(xp.level);
+    GtkWidget *xpLabel = gtk_label_new(NULL);
+    gtk_label_set_markup(GTK_LABEL(xpLabel), setMarkup(xpText, 9000).c_str());
+    gtk_box_pack_start(GTK_BOX(xpHBox), xpLabel, FALSE, FALSE, 4);
+
+    std::string xpCountText = std::to_string(xp.xp) + "/" + std::to_string(xpNeeded);
+    GtkWidget *xpCountLabel = gtk_label_new(NULL);
+    gtk_label_set_markup(GTK_LABEL(xpCountLabel), setMarkup(xpCountText, 9000).c_str());
+    gtk_box_pack_start(GTK_BOX(xpHBox), xpCountLabel, FALSE, FALSE, 0);
+
+    GtkWidget *xpBar = gtk_progress_bar_new();
+    gtk_progress_bar_set_fraction(GTK_PROGRESS_BAR(xpBar), xpPercent);
+
+    gtk_rc_parse_string(
+        "style \"xpbar\" {"
+        "  bg[NORMAL]   = \"#dddddd\""  // trough colour
+        "  bg[PRELIGHT] = \"#f0a500\""  // filled portion colour
+        "}"
+        "widget \"*.xpProgressBar\" style \"xpbar\""
+    );
+    gtk_widget_set_name(xpBar, "xpProgressBar");
+
+    gtk_widget_set_size_request(xpBar, 120, 12);
+    gtk_box_pack_start(GTK_BOX(xpHBox), xpBar, FALSE, FALSE, 0);
+
+    GtkWidget *xpAlign = gtk_alignment_new(0.5, 0.5, 0, 0);
+    gtk_container_add(GTK_CONTAINER(xpAlign), xpHBox);
+    setBackground(xpAlign, "#fff");
+
+    gtk_box_pack_start(GTK_BOX(menubarHBox), mainMenuLeftMenubar, FALSE, FALSE, 0);
+    gtk_box_pack_start(GTK_BOX(menubarHBox), xpAlign, TRUE, TRUE, 0);  // centered between the two menubars
     gtk_box_pack_start(GTK_BOX(menubarHBox), rightMenubar, FALSE, FALSE, 0);
-    gtk_box_pack_start(GTK_BOX(vBox), menubarHBox, FALSE, FALSE, 0);
+    
+
+    GtkWidget *menubarEventBox = gtk_event_box_new();
+    setBackground(menubarEventBox, "#fff");
+    gtk_container_add(GTK_CONTAINER(menubarEventBox), menubarHBox);
+    gtk_box_pack_start(GTK_BOX(vBox), menubarEventBox, FALSE, FALSE, 0);
 
     GtkWidget *currentBooksScrollbar = gtk_scrolled_window_new(NULL, NULL);
     setBackground(currentBooksScrollbar, "#fff");
@@ -167,7 +209,6 @@ void openMainScreen(GtkWidget *vBox){
             }
             
             updateBookProgress(LOCAL_DB_PATH, selectedBook.title, currentProgress, currentDate);
-            
         
             float progressRemaining = 1.0f - currentProgress;
             float requiredDailyProgress = 0.0f;
@@ -180,6 +221,15 @@ void openMainScreen(GtkWidget *vBox){
             int daysRemaining = std::max(1, selectedBook.daysToFinish - daysSinceAdded);
             if (daysRemaining > 0) {
                 float expectedProgress = (float)daysSinceAdded / selectedBook.daysToFinish;
+
+                expectedProgress = (float)daysSinceAdded / selectedBook.daysToFinish;
+                if (currentProgress >= expectedProgress && daysSinceAdded > 0) {
+                    addXp(LOCAL_DB_PATH, 50);
+                }
+                if (currentProgress >= 1.0f) {
+                    addXp(LOCAL_DB_PATH, 500);
+                }
+                
                 float deficit = std::max(0.0f, expectedProgress - currentProgress);
                 float requiredDailyProgress = (progressRemaining / daysRemaining) + (deficit / daysRemaining);
             }
