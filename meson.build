@@ -22,7 +22,7 @@ sources = files(
 include_dirs = include_directories('./include/')
 
 executable(
-  'template_kindle_gtk',
+  'KoScheduler',
   sources,
   include_directories: include_dirs,
   dependencies: [
