@@ -29,62 +29,62 @@ void on_button_cancel_remove(GtkWidget *menuItem, gpointer user_data) {
 
 void on_button_confirm_remove(GtkWidget *menuItem, gpointer user_data) {
     RemoveConfirmData *data = (RemoveConfirmData *)user_data;
+    std::string title = data->title;
     GtkWidget *vBox = data->vBox;
     delete data;
+
+    removeSelectedBook(LOCAL_DB_PATH, title);
+
     openMainScreen(vBox);
 }
 
 void showRemoveConfirmationScreen(const std::string &title, GtkWidget *vBox) {
-    clearWindow(vBox);
-    setBackground(vBox, "#ffffff");
+    clearWindow(vBox); 
     
-    GtkWidget *contentVBox = gtk_vbox_new(FALSE, 20);
-    gtk_box_pack_start(GTK_BOX(vBox), contentVBox, TRUE, TRUE, 40);
-    
+    GtkWidget *contentVBox = gtk_vbox_new(FALSE, 10);
+    gtk_box_pack_start(GTK_BOX(vBox), contentVBox, TRUE, TRUE, 10);
+
+    GtkWidget *titleLabel = gtk_label_new(NULL);
+    gtk_label_set_markup(GTK_LABEL(titleLabel), setWhiteMarkup("Title: \n\n" + title, 12000).c_str());
+    gtk_label_set_line_wrap(GTK_LABEL(titleLabel), TRUE);
+    gtk_label_set_justify(GTK_LABEL(titleLabel), GTK_JUSTIFY_CENTER);
+    gtk_box_pack_start(GTK_BOX(contentVBox), titleLabel, FALSE, FALSE, 5);
+
     GtkWidget *warningLabel = gtk_label_new(NULL);
-    std::string warningText = "Are you sure you want to remove this book from your reading list?\n This will erase your current streak.";
-    gtk_label_set_markup(GTK_LABEL(warningLabel), setMarkup(warningText, 14000).c_str());
+    gtk_label_set_markup(GTK_LABEL(warningLabel), setWhiteMarkup("Are you sure you want to remove this book from your reading list?\n This will erase your current streak.", 10000).c_str());
     gtk_label_set_line_wrap(GTK_LABEL(warningLabel), TRUE);
     gtk_label_set_justify(GTK_LABEL(warningLabel), GTK_JUSTIFY_CENTER);
     gtk_box_pack_start(GTK_BOX(contentVBox), warningLabel, FALSE, FALSE, 10);
     
-    GtkWidget *titleLabel = gtk_label_new(NULL);
-    std::string titleMarkup = "<span size=\"16000\" weight=\"bold\">" + title + "</span>";
-    gtk_label_set_markup(GTK_LABEL(titleLabel), titleMarkup.c_str());
-    gtk_label_set_line_wrap(GTK_LABEL(titleLabel), TRUE);
-    gtk_label_set_justify(GTK_LABEL(titleLabel), GTK_JUSTIFY_CENTER);
-    gtk_box_pack_start(GTK_BOX(contentVBox), titleLabel, FALSE, FALSE, 5);
-    
-    GtkWidget *infoLabel = gtk_label_new(NULL);
-    std::string infoText = "Your reading progress and streak for this book will be lost.";
-    gtk_label_set_markup(GTK_LABEL(infoLabel), setMarkup(infoText, 11000).c_str());
-    gtk_label_set_line_wrap(GTK_LABEL(infoLabel), TRUE);
-    gtk_label_set_justify(GTK_LABEL(infoLabel), GTK_JUSTIFY_CENTER);
-    gtk_box_pack_start(GTK_BOX(contentVBox), infoLabel, FALSE, FALSE, 10);
-    
     GtkWidget *buttonBox = gtk_hbox_new(TRUE, 20);
     gtk_box_pack_start(GTK_BOX(contentVBox), buttonBox, FALSE, FALSE, 20);
-    
+
     GtkWidget *cancelMi = gtk_menu_item_new();
     GtkWidget *cancelLabel = gtk_label_new(NULL);
     gtk_label_set_markup(GTK_LABEL(cancelLabel), setMarkup("Cancel", 13000).c_str());
     gtk_container_add(GTK_CONTAINER(cancelMi), cancelLabel);
-    
+
     GtkWidget *cancelMenubar = gtk_menu_bar_new();
-    setBackground(cancelMenubar, "#ffffff");
     gtk_menu_shell_append(GTK_MENU_SHELL(cancelMenubar), cancelMi);
-    gtk_box_pack_start(GTK_BOX(buttonBox), cancelMenubar, TRUE, TRUE, 0);
-    
+
+    // Wrap in alignment to center it within its half of buttonBox
+    GtkWidget *cancelAlign = gtk_alignment_new(0.5, 0.5, 0, 0);
+    gtk_container_add(GTK_CONTAINER(cancelAlign), cancelMenubar);
+    gtk_box_pack_start(GTK_BOX(buttonBox), cancelAlign, TRUE, TRUE, 0);
+
     GtkWidget *confirmMi = gtk_menu_item_new();
     GtkWidget *confirmLabel = gtk_label_new(NULL);
     gtk_label_set_markup(GTK_LABEL(confirmLabel), "<span size=\"13000\" foreground=\"#ff3333\">Remove Book</span>");
     gtk_container_add(GTK_CONTAINER(confirmMi), confirmLabel);
-    
+
     GtkWidget *confirmMenubar = gtk_menu_bar_new();
-    setBackground(confirmMenubar, "#ffffff");
     gtk_menu_shell_append(GTK_MENU_SHELL(confirmMenubar), confirmMi);
-    gtk_box_pack_start(GTK_BOX(buttonBox), confirmMenubar, TRUE, TRUE, 0);
-    
+
+    // Same for confirm button
+    GtkWidget *confirmAlign = gtk_alignment_new(0.5, 0.5, 0, 0);
+    gtk_container_add(GTK_CONTAINER(confirmAlign), confirmMenubar);
+    gtk_box_pack_start(GTK_BOX(buttonBox), confirmAlign, TRUE, TRUE, 0);
+
     RemoveConfirmData *callbackData = new RemoveConfirmData;
     callbackData->title = title;
     callbackData->vBox = vBox;
@@ -100,7 +100,7 @@ void on_button_remove_book(GtkWidget *button, gpointer user_data) {
     showRemoveConfirmationScreen(data->title, data->vBox);
 }
 
-GtkWidget* create_book_card(const std::string title, float currentProgress, float requiredDailyPages, float totalPagesRemaining, int daysUntilCompletion, int streak, GtkWidget *vBox){
+GtkWidget* create_book_card(const std::string title, float currentProgress, float requiredDailyProgress, float progressRemaining, int daysUntilCompletion, int streak, GtkWidget *vBox){
     GtkWidget *outerBox = gtk_event_box_new(); 
     setBackground(outerBox, "#000"); 
     
@@ -166,18 +166,18 @@ GtkWidget* create_book_card(const std::string title, float currentProgress, floa
     GtkWidget *currentProgressLabel = gtk_label_new(NULL);
     gtk_label_set_markup(GTK_LABEL(currentProgressLabel), setMarkup(currentProgressText, 10000).c_str());
     gtk_box_pack_start(GTK_BOX(box), currentProgressLabel, FALSE, FALSE, 0);
-    
+
     std::stringstream requiredStream;
-    requiredStream << std::fixed << std::setprecision(1) << requiredDailyPages;
-    std::string requiredText = requiredStream.str() + (requiredDailyPages == 1.0f ? " page required today" : " pages required today");
+    requiredStream << std::fixed << std::setprecision(1) << (requiredDailyProgress * 100.0f) << "% required today";
+    std::string requiredText = requiredStream.str();
     
     GtkWidget *requiredProgressLabel = gtk_label_new(NULL);
     gtk_label_set_markup(GTK_LABEL(requiredProgressLabel), setMarkup(requiredText, 10000).c_str());
     gtk_box_pack_start(GTK_BOX(box), requiredProgressLabel, FALSE, FALSE, 0);
     
     std::stringstream totalStream;
-    totalStream << std::fixed << std::setprecision(0) << totalPagesRemaining;
-    std::string totalText = totalStream.str() + (totalPagesRemaining == 1.0f ? " page until completion" : " pages until completion");
+    totalStream << std::fixed << std::setprecision(1) << (progressRemaining * 100.0f) << "% remaining";
+    std::string totalText = totalStream.str();
     
     GtkWidget *totalProgressLabel = gtk_label_new(NULL);
     gtk_label_set_markup(GTK_LABEL(totalProgressLabel), setMarkup(totalText, 10000).c_str());

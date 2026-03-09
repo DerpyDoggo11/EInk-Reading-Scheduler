@@ -11,6 +11,7 @@ struct selectedBookData {
     std::string lastOpenDate;
     int streak;
     float totalPages;
+    std::string dateAdded;
 };
 
 bool initLocalDatabase(const std::string &databasePath);
@@ -19,5 +20,6 @@ std::list<selectedBookData> getSelectedBooks(const std::string &databasePath);
 bool isBookSelected(const std::string &databasePath, const std::string &title);
 bool removeSelectedBook(const std::string &databasePath, const std::string &title);
 bool updateBookProgress(const std::string &databasePath, const std::string &title, float currentProgress, const std::string &currentDate);
+int daysBetweenDates(const std::string &date1, const std::string &date2);
 
 #endif

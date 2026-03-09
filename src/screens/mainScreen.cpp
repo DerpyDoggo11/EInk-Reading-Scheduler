@@ -53,20 +53,20 @@ void openMainScreen(GtkWidget *vBox){
 
     gtk_misc_set_alignment(GTK_MISC(titleLabel), 0.5, 0.5);
 
-    GtkWidget *shopMi = gtk_menu_item_new();
-    GtkWidget *shopHbox = gtk_hbox_new(FALSE, 6);
+    // GtkWidget *shopMi = gtk_menu_item_new();
+    // GtkWidget *shopHbox = gtk_hbox_new(FALSE, 6);
 
-    GtkWidget *shopLabel = gtk_label_new(NULL);
-    gtk_label_set_markup(GTK_LABEL(shopLabel), setMarkup("Open Shop", 10000).c_str());
-    gtk_box_pack_start(GTK_BOX(shopHbox), shopLabel, FALSE, FALSE, 0);
+    // GtkWidget *shopLabel = gtk_label_new(NULL);
+    // gtk_label_set_markup(GTK_LABEL(shopLabel), setMarkup("Open Shop", 10000).c_str());
+    // gtk_box_pack_start(GTK_BOX(shopHbox), shopLabel, FALSE, FALSE, 0);
 
-    GdkPixbuf *shopPixbuf = gdk_pixbuf_new_from_inline(shop_png_len, shop_png, FALSE, NULL);
-    GdkPixbuf *shopScaled = gdk_pixbuf_scale_simple(shopPixbuf, 16, 16, GDK_INTERP_BILINEAR);
-    GtkWidget *shopIcon = gtk_image_new_from_pixbuf(shopScaled);
-    g_object_unref(shopPixbuf);
-    gtk_box_pack_start(GTK_BOX(shopHbox), shopIcon, FALSE, FALSE, 0);
+    // GdkPixbuf *shopPixbuf = gdk_pixbuf_new_from_inline(shop_png_len, shop_png, FALSE, NULL);
+    // GdkPixbuf *shopScaled = gdk_pixbuf_scale_simple(shopPixbuf, 16, 16, GDK_INTERP_BILINEAR);
+    // GtkWidget *shopIcon = gtk_image_new_from_pixbuf(shopScaled);
+    // g_object_unref(shopPixbuf);
+    // gtk_box_pack_start(GTK_BOX(shopHbox), shopIcon, FALSE, FALSE, 0);
 
-    gtk_container_add(GTK_CONTAINER(shopMi), shopHbox);
+    // gtk_container_add(GTK_CONTAINER(shopMi), shopHbox);
     
     GtkWidget *addBookMi = gtk_menu_item_new();
     GtkWidget *addBookHbox = gtk_hbox_new(FALSE, 6);
@@ -107,7 +107,7 @@ void openMainScreen(GtkWidget *vBox){
     setBackground(mainMenuLeftMenubar, "#fff");
 
     gtk_menu_shell_append(GTK_MENU_SHELL(mainMenuLeftMenubar), titleMi);
-    gtk_menu_shell_append(GTK_MENU_SHELL(mainMenuLeftMenubar), shopMi);
+    // gtk_menu_shell_append(GTK_MENU_SHELL(mainMenuLeftMenubar), shopMi);
     gtk_menu_shell_append(GTK_MENU_SHELL(mainMenuLeftMenubar), addBookMi);
 
     GtkWidget *rightMenubar = gtk_menu_bar_new();
@@ -168,21 +168,30 @@ void openMainScreen(GtkWidget *vBox){
             
             updateBookProgress(LOCAL_DB_PATH, selectedBook.title, currentProgress, currentDate);
             
-            float pagesRemaining = selectedBook.totalPages * (1.0f - currentProgress);
-            
-            float requiredDailyPages = 0.0f;
-            if (selectedBook.daysToFinish > 0) {
-                requiredDailyPages = pagesRemaining / selectedBook.daysToFinish;
+        
+            float progressRemaining = 1.0f - currentProgress;
+            float requiredDailyProgress = 0.0f;
+
+            int daysSinceAdded = 0;
+            if (!selectedBook.dateAdded.empty()) {
+                daysSinceAdded = daysBetweenDates(selectedBook.dateAdded, currentDate);
             }
-            
+
+            int daysRemaining = std::max(1, selectedBook.daysToFinish - daysSinceAdded);
+            if (daysRemaining > 0) {
+                float expectedProgress = (float)daysSinceAdded / selectedBook.daysToFinish;
+                float deficit = std::max(0.0f, expectedProgress - currentProgress);
+                float requiredDailyProgress = (progressRemaining / daysRemaining) + (deficit / daysRemaining);
+            }
+
             std::cout << "Displaying selected book: " << selectedBook.title << std::endl;
             
             GtkWidget *card = create_book_card(
                 selectedBook.title,
                 currentProgress,
-                requiredDailyPages,
-                pagesRemaining,
-                selectedBook.daysToFinish,
+                requiredDailyProgress,
+                progressRemaining,
+                daysRemaining,
                 selectedBook.streak,
                 vBox  
             );

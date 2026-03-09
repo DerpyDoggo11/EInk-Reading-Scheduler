@@ -31,7 +31,7 @@ std::list<bookData> retrieveLibraryData(const std::string &databasePath)
   {
     const unsigned char *titleText = sqlite3_column_text(stmt, 0);
     const unsigned char *idText = sqlite3_column_text(stmt, 1);
-    float progress = sqlite3_column_int(stmt, 2);
+    float progress = (float)sqlite3_column_double(stmt, 2);
 
     bookData entry;
 

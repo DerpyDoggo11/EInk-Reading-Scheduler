@@ -135,7 +135,7 @@ std::list<selectedBookData> getSelectedBooks(const std::string &databasePath) {
         return selectedBooks;
     }
 
-    const char *sql = "SELECT title, days_to_finish, last_progress, last_open_date, streak, total_pages FROM selected_books ORDER BY date_added DESC;";
+    const char *sql = "SELECT title, days_to_finish, last_progress, last_open_date, streak, total_pages, date_added FROM selected_books ORDER BY date_added DESC;";
 
     if (sqlite3_prepare_v2(db, sql, -1, &stmt, nullptr) != SQLITE_OK) {
         sqlite3_close(db);
@@ -165,7 +165,16 @@ std::list<selectedBookData> getSelectedBooks(const std::string &databasePath) {
         book.streak = sqlite3_column_int(stmt, 4);
         book.totalPages = sqlite3_column_double(stmt, 5);
 
+        const unsigned char *dateAddedText = sqlite3_column_text(stmt, 6);
+        if (dateAddedText) {
+            std::string fullDate = reinterpret_cast<const char *>(dateAddedText);
+            book.dateAdded = fullDate.substr(0, 10);
+        } else {
+            book.dateAdded = "";
+        }
+
         selectedBooks.push_back(book);
+
     }
 
     sqlite3_finalize(stmt);
@@ -267,9 +276,13 @@ bool updateBookProgress(const std::string &databasePath, const std::string &titl
         int daysDiff = daysBetweenDates(lastOpenDate, currentDate);
         
         if (daysDiff == 1 && currentProgress > lastProgress) {
-            newStreak++;
+            if (currentProgress > lastProgress) {
+                newStreak++;
+            } else {
+                newStreak = 0;  // opened app next day but hadn't read
+                
+            }
         }
-
         else if (daysDiff > 1) {
             newStreak = (currentProgress > lastProgress) ? 1 : 0;
         }

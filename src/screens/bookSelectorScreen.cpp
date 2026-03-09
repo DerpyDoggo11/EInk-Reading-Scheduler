@@ -23,7 +23,6 @@ struct BookSelectorData {
     GtkWidget *errorLabel;
     GtkWidget *confirmMi;
     GtkWidget *daysLabel;
-    std::map<std::string, float> *bookPagesMap;
     std::string selectedBookTitle;
     int daysToFinish;
 };
@@ -109,7 +108,6 @@ void on_book_item_clicked(GtkWidget *button, gpointer user_data) {
 void on_button_back(GtkWidget *menuItem, gpointer user_data) {
     BookSelectorData *data = (BookSelectorData *)user_data;
     GtkWidget *vBox = data->vBox;
-    delete data->bookPagesMap;
     delete data;
     openMainScreen(vBox);
 }
@@ -125,19 +123,13 @@ void on_button_confirm(GtkWidget *menuItem, gpointer user_data) {
         return;
     }
 
-    float totalPages = 100.0f;
-    if (data->bookPagesMap && data->bookPagesMap->find(data->selectedBookTitle) != data->bookPagesMap->end()) {
-        totalPages = (*data->bookPagesMap)[data->selectedBookTitle];
-    }
-
     initLocalDatabase(LOCAL_DB_PATH);
 
     if (isBookSelected(LOCAL_DB_PATH, data->selectedBookTitle)) {
         return;
     }
 
-    if (addSelectedBook(LOCAL_DB_PATH, data->selectedBookTitle, data->daysToFinish, totalPages)) {
-        delete data->bookPagesMap;
+    if (addSelectedBook(LOCAL_DB_PATH, data->selectedBookTitle, data->daysToFinish, 0.0f)) {
         GtkWidget *vBox = data->vBox;
         delete data;
         openMainScreen(vBox);
@@ -196,11 +188,9 @@ void openBookSelectorScreen(GtkWidget *vBox){
 
     std::list<bookData> libraryBooks = retrieveLibraryData(KOBO_DB_PATH);
     
-    std::map<std::string, float> *bookPagesMap = new std::map<std::string, float>();
 
     BookSelectorData *callbackData = new BookSelectorData;
     callbackData->vBox = vBox;
-    callbackData->bookPagesMap = bookPagesMap;
     callbackData->daysToFinish = 7; 
     callbackData->selectedBookTitle = ""; 
 
@@ -215,9 +205,6 @@ void openBookSelectorScreen(GtkWidget *vBox){
                 GtkWidget *bookButton = gtk_button_new_with_label(book.title.c_str());
                 gtk_button_set_relief(GTK_BUTTON(bookButton), GTK_RELIEF_NORMAL);
                 gtk_widget_set_size_request(bookButton, -1, 50);
-
-                float estimatedTotalPages = 300.0f;
-                (*bookPagesMap)[book.title] = estimatedTotalPages;
 
                 g_signal_connect(G_OBJECT(bookButton), "clicked", G_CALLBACK(on_book_item_clicked), callbackData);
 
