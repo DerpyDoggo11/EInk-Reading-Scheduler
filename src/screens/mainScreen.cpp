@@ -139,14 +139,13 @@ void openMainScreen(GtkWidget *vBox){
     GtkWidget *xpBar = gtk_progress_bar_new();
     gtk_progress_bar_set_fraction(GTK_PROGRESS_BAR(xpBar), xpPercent);
 
-    gtk_rc_parse_string(
-        "style \"xpbar\" {"
-        "  bg[NORMAL]   = \"#dddddd\""  // trough colour
-        "  bg[PRELIGHT] = \"#f0a500\""  // filled portion colour
-        "}"
-        "widget \"*.xpProgressBar\" style \"xpbar\""
-    );
-    gtk_widget_set_name(xpBar, "xpProgressBar");
+    GdkColor xpFill;
+    gdk_color_parse("#a0a0a0", &xpFill);
+    gtk_widget_modify_bg(xpBar, GTK_STATE_PRELIGHT, &xpFill); 
+
+    GdkColor xpTrough;
+    gdk_color_parse("#dddddd", &xpTrough);
+    gtk_widget_modify_bg(xpBar, GTK_STATE_NORMAL, &xpTrough);
 
     gtk_widget_set_size_request(xpBar, 120, 12);
     gtk_box_pack_start(GTK_BOX(xpHBox), xpBar, FALSE, FALSE, 0);
@@ -209,7 +208,16 @@ void openMainScreen(GtkWidget *vBox){
             }
             
             updateBookProgress(LOCAL_DB_PATH, selectedBook.title, currentProgress, currentDate);
-        
+
+            std::list<selectedBookData> refreshed = getSelectedBooks(LOCAL_DB_PATH);
+            int updatedStreak = selectedBook.streak;
+            for (auto &r : refreshed) {
+                if (r.title == selectedBook.title) {
+                    updatedStreak = r.streak;
+                    break;
+                }
+            }
+
             float progressRemaining = 1.0f - currentProgress;
             float requiredDailyProgress = 0.0f;
 
@@ -219,20 +227,20 @@ void openMainScreen(GtkWidget *vBox){
             }
 
             int daysRemaining = std::max(1, selectedBook.daysToFinish - daysSinceAdded);
-            if (daysRemaining > 0) {
-                float expectedProgress = (float)daysSinceAdded / selectedBook.daysToFinish;
 
-                expectedProgress = (float)daysSinceAdded / selectedBook.daysToFinish;
-                if (currentProgress >= expectedProgress && daysSinceAdded > 0) {
-                    addXp(LOCAL_DB_PATH, 50);
-                }
-                if (currentProgress >= 1.0f) {
-                    addXp(LOCAL_DB_PATH, 500);
-                }
-                
-                float deficit = std::max(0.0f, expectedProgress - currentProgress);
-                float requiredDailyProgress = (progressRemaining / daysRemaining) + (deficit / daysRemaining);
+            float expectedProgress = (float)daysSinceAdded / selectedBook.daysToFinish;
+
+            if (currentProgress >= expectedProgress && daysSinceAdded > 0) {
+                addXp(LOCAL_DB_PATH, 50);
             }
+
+            if (currentProgress >= 1.0f && !isBookCompleted(LOCAL_DB_PATH, selectedBook.title)) {
+                addXp(LOCAL_DB_PATH, 500);
+                markBookCompleted(LOCAL_DB_PATH, selectedBook.title);
+            }
+
+            float deficit = std::max(0.0f, expectedProgress - currentProgress);
+            requiredDailyProgress = (progressRemaining / daysRemaining) + (deficit / daysRemaining);
 
             std::cout << "Displaying selected book: " << selectedBook.title << std::endl;
             
@@ -242,7 +250,7 @@ void openMainScreen(GtkWidget *vBox){
                 requiredDailyProgress,
                 progressRemaining,
                 daysRemaining,
-                selectedBook.streak,
+                updatedStreak,
                 vBox  
             );
             setBackground(card, "#fff");

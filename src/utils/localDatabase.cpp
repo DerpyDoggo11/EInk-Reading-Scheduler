@@ -80,7 +80,8 @@ bool initLocalDatabase(const std::string &databasePath) {
         "last_open_date TEXT DEFAULT '',"
         "streak INTEGER DEFAULT 0,"
         "total_pages REAL DEFAULT 0.0,"
-        "date_added DATETIME DEFAULT CURRENT_TIMESTAMP"
+        "date_added DATETIME DEFAULT CURRENT_TIMESTAMP,"
+        "completed INTEGER DEFAULT 0"
         ");";
 
     char *errorMessage = nullptr;
@@ -394,4 +395,46 @@ bool addXp(const std::string &databasePath, int amount) {
     sqlite3_finalize(stmt);
     sqlite3_close(db);
     return success;
+}
+
+bool markBookCompleted(const std::string &databasePath, const std::string &title) {
+    sqlite3 *db = nullptr;
+    sqlite3_stmt *stmt = nullptr;
+
+    if (sqlite3_open(databasePath.c_str(), &db) != SQLITE_OK) return false;
+
+    const char *sql = "UPDATE selected_books SET completed = 1 WHERE title = ?;";
+    if (sqlite3_prepare_v2(db, sql, -1, &stmt, nullptr) != SQLITE_OK) {
+        sqlite3_close(db);
+        return false;
+    }
+
+    sqlite3_bind_text(stmt, 1, title.c_str(), -1, SQLITE_TRANSIENT);
+    bool success = (sqlite3_step(stmt) == SQLITE_DONE);
+    sqlite3_finalize(stmt);
+    sqlite3_close(db);
+    return success;
+}
+
+bool isBookCompleted(const std::string &databasePath, const std::string &title) {
+    sqlite3 *db = nullptr;
+    sqlite3_stmt *stmt = nullptr;
+
+    if (sqlite3_open(databasePath.c_str(), &db) != SQLITE_OK) return false;
+
+    const char *sql = "SELECT completed FROM selected_books WHERE title = ?;";
+    if (sqlite3_prepare_v2(db, sql, -1, &stmt, nullptr) != SQLITE_OK) {
+        sqlite3_close(db);
+        return false;
+    }
+
+    sqlite3_bind_text(stmt, 1, title.c_str(), -1, SQLITE_TRANSIENT);
+    bool completed = false;
+    if (sqlite3_step(stmt) == SQLITE_ROW) {
+        completed = (sqlite3_column_int(stmt, 0) == 1);
+    }
+
+    sqlite3_finalize(stmt);
+    sqlite3_close(db);
+    return completed;
 }
